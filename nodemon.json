@@ -1,0 +1,8 @@
+{
+  "env":{
+    "MONGODB_URL":"localhost",
+    "MONGODB_USER":"",
+    "MONGODB_PASSWORD":"",
+    "MONGODB_DATABASE":"events-react-dev"
+  }
+}

@@ -1,9 +1,10 @@
 const express = require('express');
 const graphqlHTTP = require('express-graphql');
 const { buildSchema } = require('graphql');
+const mongoose = require('mongoose');
+const Event = require('./models/events');
 
-const app = express();
-const events = [];
+const app = express(); 
 
 
 app.use('/graphql', graphqlHTTP({
@@ -26,7 +27,7 @@ app.use('/graphql', graphqlHTTP({
         type RootQuery {
             events:[Event!]!
         }
-        
+
         type RootMutation {
             createEvent(eventInput: EvenInput): Event
         }
@@ -38,23 +39,45 @@ app.use('/graphql', graphqlHTTP({
     `),
     rootValue: {
         events: () => {
-            return events;
+           return Event
+              .find()
+              .then(events => {
+                return events.map(event => {
+                  return { ...event._doc };
+                });
+              })
+              .catch(err => {
+                console.log(err);
+                throw err;
+              })
         },
-        createEvent:(args)=>{
-            const event = {
-                _id:Math.random().toString(),
+        createEvent:(args) => {
+            const event = new Event({
                 title: args.eventInput.title,
                 description: args.eventInput.description,
                 price: +args.eventInput.price,
-                date: args.eventInput.date
-            };
-            events.push(event);
+                date: new Date(args.eventInput.date)
+            });
+            return event
+              .save()
+              .then(result => {
+                console.log(result);
+                return {...result._doc};
+              })
+              .catch(err => {
+              console.log(err);
+              throw err;
+            });
             return event;
         }
     },
     graphiql:true
   }))
 
-app.listen(3000, () => {
-  console.log('App listening on port 3000')
+mongoose.connect(`mongodb://localhost/${process.env.MONGODB_DATABASE}`).then(()=>{
+  app.listen(3000, () => {
+    console.log('App listening on port 3000')
+  })  
+}).catch(err=>{
+  console.log(err);
 })
